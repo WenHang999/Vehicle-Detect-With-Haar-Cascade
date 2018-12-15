@@ -1,0 +1,80 @@
+<html>
+<head>
+  <meta http-equiv="refresh" content="900">
+  <title>Traffic Condition Track</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCWE47bf1TXZeHKi8nHvt9J6ggJXgouwHw&callback=initMap"
+  async defer></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<style>
+  #map {
+    height: 100%;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+<body>
+  <div id="map"></div>
+<script type="text/javascript">
+
+    // Require image from data.gov Traffic API
+    var response
+    var request = new XMLHttpRequest();
+    request.open('GET', 'https://api.data.gov.sg/v1/transport/traffic-images', true);
+    request.onload = function () {
+    var data = JSON.parse(this.response);
+        response = data['items'][0]['cameras']     
+        for (var i = 0; i < response.length; i++) { 
+          response[i]['message'] = processimg(response[i]['image'])
+        }
+    }
+    request.send();
+
+    // load google map with marker
+    function initMap(){
+      var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 12,
+      center: new google.maps.LatLng(1.363514,103.814451),
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+      });
+    var markers = [];
+    for (var i = 0; i < response.length; i++) { 
+      var pos = new google.maps.LatLng(response[i]['location']['latitude'], response[i]['location']['longitude'])
+        markers[i] = new google.maps.Marker({
+        position: pos,
+        map: map
+        });      
+        imgurl = response[i]['image']
+        message = response[i]['message']
+        addInfoWindow(markers[i],imgurl,message)
+    }
+    }
+    // Add info window for each marker
+    function addInfoWindow(marker, imgurl,message) {
+    var infoWindow = new google.maps.InfoWindow({    
+      content:'<h1>'+message+'</h1><img src="'+imgurl+'">'
+    })
+    google.maps.event.addListener(marker, 'click', function () {
+        infoWindow.open(map, marker);
+    });
+    }
+    // process each image
+    function processimg(url){
+      var message = ''
+        jQuery.ajax({
+                    url: "/api/imgprocess",
+                    type: 'POST',
+                    async: false,
+                    data: {imgUrl:url} ,            
+                    success: function(data,textStatus,xgr){
+                      message  = data.message +', Vehicle Detected: '+ data.Count  
+                    }
+        })
+        return message
+    }
+  </script>
+</body>
+</html>
