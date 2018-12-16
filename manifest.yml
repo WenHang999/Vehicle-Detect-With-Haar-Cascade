@@ -1,0 +1,8 @@
+---
+applications:
+ - name: python-app
+   random-route: true
+   memory: 1024M
+   timeout: 600
+   
+   
